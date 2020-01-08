@@ -1,3 +1,6 @@
+Version 0.6.9
+- Added some default config values that were missing
+
 Version 0.6.2
 - Bugfix: Save properly minimum values of specific remove rules in WebUI.
 

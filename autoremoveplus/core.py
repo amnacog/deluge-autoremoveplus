@@ -74,7 +74,13 @@ DEFAULT_PREFS = {
     'tracker_rules': {},
     'label_rules': {},
     'rule_1_enabled': True,
-    'rule_2_enabled': True
+    'rule_2_enabled': True,
+    "enable_lidarr": False,
+    "enable_radarr": False,
+    "enable_sonarr": False,
+    "pause_seed": False,  
+    "seedtime_limit": 120,
+    "seedtime_pause": 48  
 }
 
 def _get_ratio(i_t):
@@ -295,25 +301,25 @@ class Core(CorePluginBase):
         log.info("AutoRemovePlus: check do_remove")
         
         try:
-          max_seeds = self.config['max_seeds']
+          max_seeds = int(self.config['max_seeds'])
           count_exempt = self.config['count_exempt']
           remove_data = self.config['remove_data']
           exemp_trackers = self.config['trackers']
           exemp_labels = self.config['labels']
-          min_val = self.config['min']
-          max_val2 = self.config['min2']
+          min_val = float(self.config['min'])
+          max_val2 = float(self.config['min2'])
           remove = self.config['remove']
           enabled = self.config['enabled']
           tracker_rules = self.config['tracker_rules']
           rule_1_chk = self.config['rule_1_enabled']
           rule_2_chk = self.config['rule_2_enabled']
-          seedtime_limit = self.config['seedtime_limit']
-          seedtime_pause = self.config['seedtime_pause']
+          seedtime_limit = float(self.config['seedtime_limit'])
+          seedtime_pause = float(self.config['seedtime_pause'])
           always_pause_seed = self.config['pause_seed']
           labels_enabled = False
-          use_sonarr = self.config['enable_sonarr']
-          use_radarr = self.config['enable_radarr']
-          use_lidarr = self.config['enable_lidarr']
+          use_sonarr = self.config['enable_sonarr'] if self.config['enable_sonarr'] else False
+          use_radarr = self.config['enable_radarr'] if self.config['enable_radarr'] else False
+          use_lidarr = self.config['enable_lidarr'] if self.config['enable_lidarr'] else False
           
           sonarr_list = self.sonarr.get_queue() if use_sonarr else {}
           radarr_list = self.radarr.get_queue() if use_radarr else {}

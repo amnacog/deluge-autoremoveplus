@@ -44,7 +44,7 @@ from setuptools import setup
 __plugin_name__ = "AutoRemovePlus"
 __author__ = "Spring Jools"
 __author_email__ = "springjools@gmail.com"
-__version__ = "0.6.6"
+__version__ = "0.6.9"
 __url__ = "http://github.com/springjools"
 __license__ = "GPLv3"
 __description__ = "Auto removal of torrents according to certain parameters"
