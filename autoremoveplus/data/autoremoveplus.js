@@ -683,6 +683,12 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
           margins: '5 0 0 5',
           boxLabel: _('Just pause seeding torrents, never remove')
         });
+        
+        this.chkRemoveSeedData = this.genSettingsBox.add({
+          xtype: 'checkbox',
+          margins: '5 0 0 5',
+          boxLabel: _('Remove also data for completed torrents')
+        });
 
         this.combo = new Ext.form.ComboBox({
           store: new Ext.data.ArrayStore({
@@ -840,6 +846,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         this.testButtonContainer.getComponent(0).setHandler(this.onClickTest, this);
         
         this.chkRemove.on('check', this.onClickRemove, this);
+        this.chkRemoveSeed.on('check', this.onClickRemoveSeed, this);
         this.chkEnabled.on('check', this.onClickEnabled, this);
         this.rule1Container.getComponent(0).on('check', this.onClickChkRule1, this);
         this.rule2Container.getComponent(0).on('check', this.onClickChkRule2, this);
@@ -859,6 +866,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
     //TODO destroy
     onDestroy: function() {
         this.un('check', this.onClickRemove, this);
+        this.un('check', this.onClickRemoveSeed, this);
         this.un('check', this.onClickEnabled, this);
         this.rule1Container.getComponent(0).un('check', this.onClickChkRule1, this);
         this.rule2Container.getComponent(0).un('check', this.onClickChkRule2, this);
@@ -943,6 +951,15 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
           console.log(checked);
           console.log('onClickRemove');
     },
+    
+    onClickRemoveSeed: function(checkbox, checked) {
+        if (checked)
+          this.chkRemoveSeedData.disable();
+        else
+          this.chkRemoveSeedData.enable();
+          console.log(checked);
+          console.log('onClickRemoveSeed');
+    },
 
     enableAllWidgets: function() {
 
@@ -963,6 +980,11 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         else
           this.chkRemoveData.disable();
         this.chkRemoveSeed.enable();
+        if (this.chkRemoveSeed.getValue())
+          this.chkRemoveSeedData.disable();
+        else
+          this.chkRemoveSeedData.enable();
+        this.chkRemoveSeedData.enable();
         this.sonarrContainer.enable();
         this.lidarrContainer.enable();
         this.radarrContainer.enable();
@@ -986,6 +1008,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         this.chkRemove.disable();
         this.chkRemoveData.disable();
         this.chkRemoveSeed.disable();
+        this.chkRemoveSeedData.disable();
         this.sonarrContainer.disable();
         this.lidarrContainer.disable();
         this.radarrContainer.disable();
@@ -1080,6 +1103,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
             this.preferences = prefs;
             this.chkExemptCount.setValue(prefs['count_exempt']);
             this.chkRemoveData.setValue(prefs['remove_data']);
+            this.chkRemoveSeedData.setValue(prefs['seed_remove_data']);
             this.loadExemptions(prefs['trackers'], prefs['labels']);
             this.loadRules(prefs['tracker_rules'], prefs['label_rules']);
             this.intervalContainer.getComponent(1).setValue(prefs['interval']);
@@ -1252,6 +1276,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         var prefs = {
           remove_data: this.chkRemoveData.getValue(),
           pause_seed: this.chkRemoveSeed.getValue(),
+          seed_remove_data: this.chkRemoveSeedData.getValue(),
           count_exempt: this.chkExemptCount.getValue(),
           trackers: trackerList,
           labels: labelList,
@@ -1282,6 +1307,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         };
         
         apply |= prefs['remove_data'] != this.preferences['remove_data'];
+        apply |= prefs['seed_remove_data'] != this.preferences['seed_remove_data'];
         apply |= prefs['count_exempt'] != this.preferences['count_exempt'];
         apply |= prefs['max_seeds'] != this.preferences['max_seeds'];
         apply |= prefs['seedtime_limit'] != this.preferences['seedtime_limit'];

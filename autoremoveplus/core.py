@@ -78,6 +78,7 @@ DEFAULT_PREFS = {
     "enable_lidarr": False,
     "enable_radarr": False,
     "enable_sonarr": False,
+    "seed_remove_data": False,
     "pause_seed": False,  
     "seedtime_limit": 120,
     "seedtime_pause": 48  
@@ -315,6 +316,7 @@ class Core(CorePluginBase):
           rule_2_chk = self.config['rule_2_enabled']
           seedtime_limit = float(self.config['seedtime_limit'])
           seedtime_pause = float(self.config['seedtime_pause'])
+          seed_remove_data = self.config['seed_remove_data']
           always_pause_seed = self.config['pause_seed']
           labels_enabled = False
           use_sonarr = self.config['enable_sonarr'] if self.config['enable_sonarr'] else False
@@ -586,8 +588,8 @@ class Core(CorePluginBase):
                     #remove condition
                     if seedtime > seedtime_limit:
                         if not always_pause_seed:
-                            #Sending False to remove data because it is probably not intended for completed torrents
-                            self.remove_torrent(torrentmanager, i, False)
+                            #seed_remove_data decides if user wants data removed or not
+                            self.remove_torrent(torrentmanager, i, seed_remove_data)
                             changed = True
                             log.info("AutoRemovePlus: removing torrent from seed: {} due to seed time = {}/{} h".format(name,seedtime,seedtime_limit))
                         
