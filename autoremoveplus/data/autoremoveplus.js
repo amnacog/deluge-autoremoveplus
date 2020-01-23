@@ -515,7 +515,8 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
                 mode: 'local',
                 store: [
                     'and',
-                    'or'
+                    'or',
+                    'xor'
                 ],
                 //valueField: 'func_id',
                 //displayField: 'func_name',

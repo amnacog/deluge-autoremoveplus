@@ -42,7 +42,7 @@ __copyright__   = "Copyright 2019"
 #    this exception statement from your version. If you delete this exception
 #    statement from all source files in the program, then also delete it here.
 #
-from past.utils import old_div
+#from past.utils import old_div
 from deluge.log import LOG as log
 from deluge.plugins.pluginbase import CorePluginBase
 import deluge.component as component
@@ -89,29 +89,57 @@ def _get_ratio(i_t):
     log.debug("Get ratio: i = {}, t = {}".format(i,t))
     return t.get_ratio()
 
+def _time_last_transfer(i_t):
+    (i, t) = i_t
+    try:
+        # time since last transfer (upload/download) in hours
+        time_since_last_transfer = round(t.get_status(['time_since_transfer'])['time_since_transfer'] / 3600.0,2)
+    except Exception as e:
+        log.error("Unable to get torrent property:{}".format(e))
+        return False
+    
+    return time_since_last_transfer
+
 def _age_in_days(i_t):
     (i, t) = i_t
-    log.debug("Age in hours called: i = {}, t = {}".format(i,t))
     now = time.time()
     added = t.get_status(['time_added'])['time_added']
     log.debug("Now = {}, added = {}".format(now,added))
-    age_in_days = (now - added)/86400.0 # age in hours
+    age_in_days = round((now - added)/3600.0,2) # age in hours
     log.debug("Returning age: {}".format(age_in_days))
     return age_in_days
 
+def _time_seen_complete(i_t):
+    (i, t) = i_t
+    now = time.time()
+    try:
+      seen_complete = t.get_status(['last_seen_complete'])['last_seen_complete']
+    except Exception as e:
+      log.error("Unable to get torrent property:{}".format(e))
+      return False
+      
+    if not seen_complete: return False
+    
+    log.debug("Seen complete on: {}, now = {}".format(seen_complete,now))
+    time_last_seen_complete = round((now - seen_complete)/3600.0,2) # time in hours
+    log.debug("Returning time since seen complete: {}".format(time_last_seen_complete))
+    return time_last_seen_complete
 
-# Add key label also to get_remove_rules():141
+# Add key label also to get_remove_rules():205
 filter_funcs = {
     'func_ratio': _get_ratio,
     'func_added': _age_in_days,
-    'func_seed_time': lambda p: p[1].get_status(['seeding_time'])['seeding_time'] / 86400.0,
+    'func_seed_time': lambda p: round(p[1].get_status(['seeding_time'])['seeding_time'] / 3600.0,2),
     'func_seeders': lambda p: p[1].get_status(['total_seeds'])['total_seeds'],
-    'func_availability': lambda p: p[1].get_status(['distributed_copies'])['distributed_copies']
+    'func_availability': lambda p: p[1].get_status(['distributed_copies'])['distributed_copies'],
+    'func_time_since_transfer': _time_last_transfer,
+    'func_time_seen_complete': _time_seen_complete    
 }
 
 sel_funcs = {
     'and': lambda tup: tup[0] and tup[1],
-    'or': lambda tup: tup[0] or tup[1]
+    'or': lambda tup: tup[0] or tup[1],
+    'xor': lambda tup: (tup[0] and not tup[1]) or (not tup[0] and tup[1])
 }
 
 class Core(CorePluginBase):
@@ -157,18 +185,12 @@ class Core(CorePluginBase):
           apikey_lidarr = None
           server        = None
           
-        log.info("Server config: Sonarr: enabled={},key={}, Radarr: enabled={}, key={}, Lidarr: enabled={}, key={}, Server: url={}".format(use_sonarr,apikey_sonarr,use_radarr,apikey_radarr,use_lidarr,apikey_lidarr,server))
+        log.debug("Server config: Sonarr: enabled={},key={}, Radarr: enabled={}, key={}, Lidarr: enabled={}, key={}, Server: url={}".format(use_sonarr,apikey_sonarr,use_radarr,apikey_radarr,use_lidarr,apikey_lidarr,server))
         
         self.sonarr = Mediaserver(server,apikey_sonarr,'sonarr')
         self.lidarr = Mediaserver(server,apikey_lidarr,'lidarr')
         self.radarr = Mediaserver(server,apikey_radarr,'radarr')
-        
-        #self.mediaServer ={
-        #'tv-sonarr'     : sonarr,
-        #'lidarr'        : lidarr,
-        #'radarr'        : radarr
-        #}
-        
+               
     def disable(self):
         if self.looping_call.running:
             self.looping_call.stop()
@@ -200,9 +222,11 @@ class Core(CorePluginBase):
         return {
             'func_ratio': 'Ratio',
             'func_added': 'Age in days',
-            'func_seed_time': 'Seed Time',
+            'func_seed_time': 'Seed Time (h)',
             'func_seeders': 'Seeders',
-            'func_availability': 'Availability'
+            'func_availability': 'Availability',
+            'func_time_since_transfer': 'Time since transfer (h)',
+            'func_time_seen_complete': 'Time since seen complete (h)'
         }
 
     @export
@@ -299,7 +323,7 @@ class Core(CorePluginBase):
 
     # we don't use args or kwargs it just allows callbacks to happen cleanly
     def do_remove(self, *args, **kwargs):
-        log.info("AutoRemovePlus: check do_remove")
+        log.info("AutoRemovePlus: Running check. Interval is {} minutes".format(round(self.config['interval'] * 60.0,1)))
         
         try:
           max_seeds = int(self.config['max_seeds'])
@@ -331,7 +355,7 @@ class Core(CorePluginBase):
           seedtime_pause = seedtime_pause if seedtime_pause > 20.0 else 20.0
           seedtime_limit = seedtime_limit if seedtime_limit > 24.0 else 24.0
           
-          log.info("Using sonarr: {}, radarr: {}, lidarr: {}".format(use_sonarr,use_radarr,use_lidarr))
+          log.debug("Using sonarr: {}, radarr: {}, lidarr: {}".format(use_sonarr,use_radarr,use_lidarr))
           log.info("Size of lists: sonarr:{}, lidarr:{}, radarr:{}".format(len(sonarr_list),len(lidarr_list),len(radarr_list)))
                    
           #response = self.sonarr.delete_queueitem('1771649588')          
@@ -503,16 +527,20 @@ class Core(CorePluginBase):
                 try:
                     name = t.get_status(['name'])['name']
                     age = _age_in_days((i,t)) # age in days
-                    seedtime = t.get_status(['seeding_time'])['seeding_time']/3600 #seed time in hours
+                    seedtime = round(t.get_status(['seeding_time'])['seeding_time']/3600,2) #seed time in hours
                     ratio = t.get_status(['ratio'])['ratio']
                     availability = t.get_status(['distributed_copies'])['distributed_copies']
+                    time_last_transfer = _time_last_transfer((i,t)) # in hours
+                    time_seen_complete = _time_seen_complete((i,t)) #seen complete in hours
                     isFinished = t.get_status(['is_finished'])['is_finished']
                     paused = t.get_status(['paused'])['paused']
                     hash = t.get_status(['hash'])['hash'].upper()                    
                 except Exception as e:
                     log.error("Error with torrent: {}".format(e))
                     continue
-                    
+                if time_seen_complete:
+                    log.debug("Processing torrent: {}, last transfer: {} h, last seen complete: {} h, paused: {}".format(name,time_last_transfer,time_seen_complete,paused))
+                
                 if not isFinished:
                     try:
                         label_str = component.get("CorePlugin.Label")._status_get_label(i)
@@ -578,7 +606,7 @@ class Core(CorePluginBase):
                         else:
                             #pause instead
                             if not paused:
-                                log.info("AutoRemovePlus: Pausing torrent {} due to availability = {} and age = {}".format(name, availability, age))
+                                log.info("AutoRemovePlus: Pausing torrent {} due to availability = {}, age = {}, time_last_transfer = {}".format(name, availability, age,time_last_transfer))
                                 self.pause_torrent(t)                        
 
                 else: # is finished
