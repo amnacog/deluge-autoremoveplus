@@ -1,3 +1,11 @@
+Version 0.6.11
+- Added the 'xor' selection function. In short: returns true if only one of the conditions is true but not both.
+- Added two new filter functions: time since last transfer and time since last time complete was seen. Probably only supported on deluge 2.03 and above.
+- Removed dependecy on past_utils/future
+
+Version 0.6.10
+- Bugfixes
+
 Version 0.6.9
 - Added some default config values that were missing
 
