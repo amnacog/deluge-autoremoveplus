@@ -548,6 +548,7 @@ class Core(CorePluginBase):
                             log.warning("Torrent: {}, label = {}".format(name,label_str))
                     except Exception as e:
                         log.error("Error getting label for torrent {}: {}".format(name,e))
+                        label_str = 'none'
                     log.debug("Processing unfinished torrent {}, label = {}".format(name,label_str))
                     if remove_cond:
                         #user has selected to remove torrents
