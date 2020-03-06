@@ -137,7 +137,7 @@ class Mediaserver(object):
         while True:
             try:
                 url = self.server + self.endpoint + '/queue?' +str('page=') + str(pagenum)
-                log.info("Sending GET request to {}".format(url))
+                log.debug("Sending GET request to {}".format(url))
                 r = requests.get(url, headers=h,timeout=30)
             except Exception as e:
                 raise HTTP_MethodError('Error Connecting to server: {}'.format(e))
@@ -149,10 +149,8 @@ class Mediaserver(object):
                 records_left = total_records-pagenum*10
                 log.debug("Page {}, total records {}, left {}".format(pagenum,total_records,records_left))
                 parsedata = (r.json()['records'] if (self.type == 'lidarr' or self.type == 'sonarr') else r.json())
-                #log.info("Parsedata = {}, size = {}, type = {}, response = {}".format(parsedata,len(parsedata),self.type,r.json()))
                 try:
                     for data in parsedata:
-                        #log.info("Parsing {} data: {}".format(self.type,data))
                         output[data.get('downloadId')] = {'id':data.get('id'),'title':data.get('title')}       
                 except Exception as e:
                     log.error("Invalid mediaserver type: {}, {}".format(self.type,e))
@@ -166,7 +164,7 @@ class Mediaserver(object):
             else:
                 raise Exception("Cannot get queue:  {} ({})".format(r.status_code,httpErrors[r.status_code]))
                 
-        log.info("Returning {} records from {} queue".format(len(output),self.type))
+        log.debug("Returning {} records from {} queue".format(len(output),self.type))
         return output
                
     def get_blacklist(self):
@@ -185,7 +183,7 @@ class Mediaserver(object):
 
         url = self.server + self.endpoint + '/blacklist?sortkey=date'
 
-        log.info("Sending GET request to {}: type = {}".format(url,type(url)))
+        log.debug("Sending GET request to {}: type = {}".format(url,type(url)))
         
         try:
             r = requests.get(url, headers=h,timeout=30)
@@ -198,8 +196,6 @@ class Mediaserver(object):
             output = r.json().get('records') if r.json().get('records') else r.json()
             return output
         else:
-            #return r.status_code,r.json()
-            #log.info ("HTTP {}: {}".format(r.status_code,httpErrors[r.status_code]))
             log.error("Error getting blacklist for {}: {}".format(self.type,r.status_code))
             return False
         
@@ -218,7 +214,7 @@ class Mediaserver(object):
         }
         query = str(item_id)
         url = self.server + self.endpoint + '/blacklist/'+ query
-        log.info("Sending DELETE request to {}: type = {}".format(url,type(url)))
+        log.debug("Sending DELETE request to {}: type = {}".format(url,type(url)))
         
         try:
             r = requests.delete(url, headers=h,timeout=30)
@@ -233,9 +229,8 @@ class Mediaserver(object):
             log.error ("HTTP {}: {}".format(r.status_code,httpErrors[r.status_code]))
             raise Exception("Error deleting blacklist item for {}: {}".format(self.type,r.status_code))
 
-    def delete_queueitem(self,item_id,blacklist = 'true'):
-        """ Get queue from server
-            
+    def delete_queueitem(self,item_id,blacklist = 'true',removeFromClient = 'false'):
+        """ delete queue item from server
         """
         
         # Create and send HTTP Delete request to the mediaserver
@@ -246,22 +241,22 @@ class Mediaserver(object):
             'User-Agent'     : 'Deluge/Autoremoveplus',
             'Accept-Encoding': 'gzip'
         }
-        log.info("Parsing item id: {}, type = {}".format(item_id,type(item_id)))
+        log.debug("Parsing item id: {}, type = {}".format(item_id,type(item_id)))
         try:
-            query = str(item_id)+'?blacklist='+str(blacklist)
+            query = str(item_id)+'?blacklist='+str(blacklist)+'&removeFromClient='+str(removeFromClient)
             url = self.server + self.endpoint + '/queue/' + query
-            log.info("Got this: url = {}, type = {}, query = {}, type =? {}".format(url, type(url),query,type(query)))
+            log.debug("Got this: url = {}, type = {}, query = {}, type =? {}".format(url, type(url),query,type(query)))
         except Exception as e:
             log.error("Unable to create delete query for item {}: {}".format(item_id,e))
             return False
-        log.info("Sending DELETE request to {}: type = {}".format(url,type(url)))
+        log.debug("Sending DELETE request to {}: type = {}".format(url,type(url)))
         
         try:
             r = requests.delete(url, headers=h,timeout=30)
         except Exception as e:
             raise HTTP_MethodError('Error Connecting to server: {}'.format(e))
         
-        log.info ("HTTP {}: {}".format(r.status_code,httpErrors[r.status_code]))
+        log.debug ("HTTP {}: {}".format(r.status_code,httpErrors[r.status_code]))
         
         if r.status_code == 200: #200 = 'OK'
             try:
@@ -274,13 +269,10 @@ class Mediaserver(object):
             log.error("HTTP {}: {}".format(r.status_code,httpErrors[r.status_code]))
             log.error("Unable to delete item {}, query = {}, url = {}, response = {}".format(item_id,query,url,r.status_code))
             return False
- 
+
 
 
 def main(server,mode='queue',item=None):
-    
-    
-    
     log.info("Server = {}, mode = {}, item = {}".format(server,mode,item))
     if mode == 'queue':
         q = server.get_queue()

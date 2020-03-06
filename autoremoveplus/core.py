@@ -105,7 +105,7 @@ def _age_in_days(i_t):
     now = time.time()
     added = t.get_status(['time_added'])['time_added']
     log.debug("Now = {}, added = {}".format(now,added))
-    age_in_days = round((now - added)/3600.0,2) # age in hours
+    age_in_days = round((now - added)/86400.0,2) # age in days
     log.debug("Returning age: {}".format(age_in_days))
     return age_in_days
 
@@ -161,11 +161,11 @@ class Core(CorePluginBase):
         self.torrent_states.save()
 
         # it appears that if the plugin is enabled on boot then it is called
-        # before the torrents are properly loaded and so do_remove receives an
+        # before the torrents are properly loaded and so periodicScan receives an
         # empty list. So we must listen to SessionStarted for when deluge boots
         #  but we still have apply_now so that if the plugin is enabled
-        # mid-program do_remove is still run
-        self.looping_call = LoopingCall(self.do_remove)
+        # mid-program periodicScan is still run
+        self.looping_call = LoopingCall(self.periodicScan)
         deferLater(reactor, 5, self.start_looping)
         try:
           apikey_sonarr = self.config['api_sonarr']
@@ -189,8 +189,10 @@ class Core(CorePluginBase):
         
         self.sonarr = Mediaserver(server,apikey_sonarr,'sonarr')
         self.lidarr = Mediaserver(server,apikey_lidarr,'lidarr')
-        self.radarr = Mediaserver(server,apikey_radarr,'radarr')
-               
+        self.radarr = Mediaserver(server,apikey_radarr,'radarr')  
+        self.accepted_labels = ['tv-sonarr','radarr','lidarr']
+        self.torrentmanager = component.get("TorrentManager")
+                       
     def disable(self):
         if self.looping_call.running:
             self.looping_call.stop()
@@ -251,6 +253,112 @@ class Core(CorePluginBase):
 
         self.torrent_states.save()
 
+    def blacklistTorrent(self, i, t, label_str, name):
+        hash = t.get_status(['hash'])['hash'].upper()    
+                
+        if label_str and label_str in self.accepted_labels:
+            mediaObject = self.sonarr if label_str == 'tv-sonarr' else self.radarr if label_str == 'radarr' else self.lidarr
+        elif not label_str:
+            log.warning("No label for {}".format(name))
+            return
+        else:
+            log.warning("Unknown label for torrrent {}".format(name))
+            return
+        
+        if mediaObject:
+            mediaList = mediaObject.get_queue()
+            log.debug("Size of media list: {}".format(len(mediaList)))
+            if hash in mediaList:
+                id = str(mediaList[hash].get('id'))
+                log.info("hash: {}, id: {},type = {}".format(hash,id,type(id)))
+                
+                #blacklist from PVR
+                response = mediaObject.delete_queueitem(id)
+                changed = True
+                log.info("Blacklist request for torrent {} returned {}".format(name,response))
+                
+                isFinished = t.get_status(['is_finished'])['is_finished']
+                remove_data = self.config['seed_remove_data'] if isFinished else self.config['remove_data']
+                
+                #remove from deluge
+                result = self.remove_torrent(i,remove_data)
+                log.info("Removing {} torrent {} {} data returned: {}".format('unfinished' if not isFinished else 'finished', name, 'with' if remove_data else 'without', result))
+                    
+                return result
+            else:
+                log.warning("Could not blacklist torrent {}: not in server queue: {}".format(name, hash))
+                log.debug("List: {}".format(mediaList))
+                
+                isFinished = t.get_status(['is_finished'])['is_finished']
+                remove_data = self.config['seed_remove_data'] if isFinished else self.config['remove_data']
+                
+                #remove from deluge
+                result = self.remove_torrent(i,remove_data)
+                log.info("Removing {} torrent {} {} data. Result: {}".format('unfinished' if not isFinished else 'finished', name, 'with' if remove_data else 'without', result))
+                
+                return result
+        else:
+            log.warning("Upstream server not found for label: {}".format(label_str))
+            return
+            
+    @export
+    def blacklistCommand(self, torrent_ids):
+        log.info("blacklistCommand torrent running for {}".format(torrent_ids))
+        
+        use_sonarr = self.config['enable_sonarr'] if self.config['enable_sonarr'] else False
+        use_radarr = self.config['enable_radarr'] if self.config['enable_radarr'] else False
+        use_lidarr = self.config['enable_lidarr'] if self.config['enable_lidarr'] else False
+          
+        sonarr_list = self.sonarr.get_queue() if use_sonarr else {}
+        radarr_list = self.radarr.get_queue() if use_radarr else {}
+        lidarr_list = self.lidarr.get_queue() if use_lidarr else {}
+        try:
+            total_size = len(sonarr_list) + len(lidarr_list) + len(radarr_list)
+            log.info("Size of lists: sonarr:{}, lidarr:{}, radarr:{}".format(len(sonarr_list),len(lidarr_list),len(radarr_list)))
+        except Exception as e:
+            log.error("Error summing lists: {}".format(e))
+            return
+            
+        if not total_size or total_size == 0: 
+            log.warning("No torrents found in queue")
+            return
+            
+        label_str = None
+        blackListedNum = 0
+                
+        if not hasattr(torrent_ids, '__iter__'):
+            torrent_ids = [torrent_ids]
+
+        for i in torrent_ids:
+            t = self.torrentmanager.torrents.get(i, None)
+            log.debug("i = {}, t = {}, types = {}/{}".format(i,t,type(i),type(t)))
+            if not t:
+                log.warning("No torrent object for: {}".format(i))
+                continue
+            else: 
+                name = t.get_status(['name'])['name']
+                
+                if not name:
+                    log.warning("Skipping blacklisting of torrent {}: could not get name".format(i))
+                    continue
+                else:
+                    #try:
+                    label_str = component.get("CorePlugin.Label")._status_get_label(i)
+                    if label_str and label_str in self.accepted_labels:
+                        if (label_str == 'tv-sonarr' and use_sonarr) or (label_str == 'radarr' and use_radarr) or (label_str == 'lidarr' and use_lidarr):
+                            result = self.blacklistTorrent(i,t,label_str,name)
+                            if result:
+                                blackListedNum += 1
+                            log.info("Blacklist request returned: {}".format(result))
+                        else:
+                            log.info("Blacklisting not enabled for  {}".format(label_str))
+                    #except Exception as e:
+                    #   log.warning("Error getting label for torrent {}: {}".format(name,e))
+                    #   continue
+                           
+        self.torrent_states.save()
+        return blackListedNum
+        
     def check_min_space(self):
         min_hdd_space = self.config['hdd_space']
         real_hdd_space = component.get("Core").get_free_space() / 1073741824.0
@@ -273,16 +381,19 @@ class Core(CorePluginBase):
         except Exception as e:
             log.warning("AutoRemovePlus: Problems pausing torrent: {}".format(e))
 
-    def remove_torrent(self, torrentmanager, tid, remove_data):
-        log.info("Running remove_torrent: {} with remove data = {}".format(tid,remove_data))
+    def remove_torrent(self, tid, remove_data):
+        log.debug("Running remove_torrent: {} with remove data = {}".format(tid,remove_data))
         try:
-            torrentmanager.remove(tid, remove_data=remove_data)
+            self.torrentmanager.remove(tid, remove_data=remove_data)
         except Exception as e:
             log.warning("AutoRemovePlus: Error removing torrent {}: {}".format(tid,e))
         try:
             del self.torrent_states.config[tid]
-        except KeyError as e:
-            log.warning("AutoRemovePlus: Error removing torrent {}: {}".format(tid, e))
+        except KeyError:
+            log.warning("AutoRemovePlus: no saved state for torrent {}".format(tid))
+            return True
+        except Exception as e:
+            log.warning("AutoRemovePlus: Error deleting state for torrent {}: {}".format(tid, e))
             return False
         else:
             return True
@@ -322,13 +433,14 @@ class Core(CorePluginBase):
         return total_rules
 
     # we don't use args or kwargs it just allows callbacks to happen cleanly
-    def do_remove(self, *args, **kwargs):
+    def periodicScan(self, *args, **kwargs):
         log.info("AutoRemovePlus: Running check. Interval is {} minutes".format(round(self.config['interval'] * 60.0,1)))
         
         try:
           max_seeds = int(self.config['max_seeds'])
           count_exempt = self.config['count_exempt']
           remove_data = self.config['remove_data']
+          seed_remove_data = self.config['seed_remove_data']
           exemp_trackers = self.config['trackers']
           exemp_labels = self.config['labels']
           min_val = float(self.config['min'])
@@ -340,7 +452,6 @@ class Core(CorePluginBase):
           rule_2_chk = self.config['rule_2_enabled']
           seedtime_limit = float(self.config['seedtime_limit'])
           seedtime_pause = float(self.config['seedtime_pause'])
-          seed_remove_data = self.config['seed_remove_data']
           always_pause_seed = self.config['pause_seed']
           labels_enabled = False
           use_sonarr = self.config['enable_sonarr'] if self.config['enable_sonarr'] else False
@@ -379,8 +490,7 @@ class Core(CorePluginBase):
         if max_seeds < 0:
             return
 
-        torrentmanager = component.get("TorrentManager")
-        torrent_ids = torrentmanager.get_torrent_list()
+        torrent_ids = self.torrentmanager.get_torrent_list()
 
         log.info("Number of torrents: {0}".format(len(torrent_ids)))
 
@@ -394,7 +504,7 @@ class Core(CorePluginBase):
 
         # relevant torrents to us exist and are finished
         for i in torrent_ids:
-            t = torrentmanager.torrents.get(i, None)
+            t = self.torrentmanager.torrents.get(i, None)
       
             try:
                 ignored = self.torrent_states[i]
@@ -553,57 +663,17 @@ class Core(CorePluginBase):
                     if remove_cond:
                         #user has selected to remove torrents
                         if remove:
-                            # communicate with media servers and remove from their api
-                            if label_str == 'tv-sonarr':
-                                if use_sonarr: # remove using sonarr api and blacklist
-                                    if len(sonarr_list) > 0:
-                                        if hash in sonarr_list:
-                                            id = str(sonarr_list[hash].get('id'))
-                                            log.info("hash: {}, id: {},type = {}".format(hash,id,type(id)))
-                                            response = self.sonarr.delete_queueitem(id)
-                                            changed = True
-                                            log.info("Sending removal request for {}/{} for torrent {}: => {}".format(id,hash,name,response))
-                                            continue
-                                        else:
-                                            log.warning("Could not find torrent {} in sonarr queue:{}".format(name,hash))
-                                            log.info("List: {}".format(sonarr_list))
-                                else: # remove using local method
-                                    result = self.remove_torrent(torrentmanager, i, remove_data)
-                                    log.info("AutoRemovePlus: removing unfinished torrent {} with data using internal method: {}".format(name,result))
-                            elif label_str == 'lidarr':
-                                if use_lidarr: # remove using lidarr api and blacklist
-                                    if len(lidarr_list) > 0:
-                                        if hash in lidarr_list:
-                                            id = str(lidarr_list[hash].get('id'))
-                                            log.info("hash: {}, id: {},type = {}".format(hash,id,type(id)))
-                                            response = self.lidarr.delete_queueitem(id)
-                                            changed = True
-                                            log.info("Sending removal request for {}/{} for torrent {}: => {}".format(id,hash,name,response))
-                                            continue
-                                        else:
-                                            log.warning("Could not find torrent {} in lidarr queue:{}".format(name,hash))
-                                            log.info("List: {}".format(lidarr_list))
-                                else: # remove using local method
-                                    result = self.remove_torrent(torrentmanager, i, remove_data)
-                                    log.info("AutoRemovePlus: removing unfinished torrent {} with data using internal method: {}".format(name,result))                                
-                            elif label_str == 'radarr': 
-                                if use_radarr:
-                                    if len(radarr_list) > 0:
-                                        if hash in radarr_list:
-                                            id = str(radarr_list[hash].get('id'))
-                                            log.info("hash: {}, id: {},type = {}".format(hash,id,type(id)))
-                                            response = self.radarr.delete_queueitem(id)
-                                            changed = True
-                                            log.info("Sending removal request for {}/{} for torrent {}: => {}".format(id,hash,name,response))
-                                            continue
-                                        else:
-                                            log.warning("Could not find torrent {} in radarr queue:{}".format(name,hash))
-                                            log.info("List: {}".format(radarr_list))
-                                else: # remove using local method
-                                    result = self.remove_torrent(torrentmanager, i, remove_data)
-                                    log.info("AutoRemovePlus: removing unfinished torrent {} with data using internal method: {}".format(name,result))
+                            # blacklist
+                            if label_str and label_str in self.accepted_labels:
+                                if (label_str == 'tv-sonarr' and use_sonarr) or (label_str == 'radarr' and use_radarr) or (label_str == 'lidarr' and use_lidarr):
+                                    result = self.blacklistTorrent(i,t,label_str,name)
+                                    log.info("Blacklist request for {} returned: {}".format(name,result))
                             else:
-                                log.debug("No matching label {}for torrent {}, or queue not returned from server. Hash = {}".format(label_str,name,hash))
+                                log.warning("No matching label {} for torrent {}".format(label_str,name))
+                                
+                            # remove using local method
+                            result = self.remove_torrent(i, remove_data)
+                            log.info("AutoRemovePlus: removing unfinished torrent {} with data using internal method: {}".format(name,result))                            
                         else:
                             #pause instead
                             if not paused:
@@ -618,7 +688,7 @@ class Core(CorePluginBase):
                     if seedtime > seedtime_limit:
                         if not always_pause_seed:
                             #seed_remove_data decides if user wants data removed or not
-                            self.remove_torrent(torrentmanager, i, seed_remove_data)
+                            self.remove_torrent(i, seed_remove_data)
                             changed = True
                             log.info("AutoRemovePlus: removing torrent from seed: {} due to seed time = {}/{} h".format(name,seedtime,seedtime_limit))
                         

@@ -176,6 +176,18 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
             }
         });
 		
+		this.mediaPanel = this.mediaSettingsBox.add({
+              xtype: 'container',
+              layout: 'hbox',
+              margins: '5 5 8 5',
+              items: [
+				{
+                  xtype: 'label',
+                  margins: '5 5 0 0',
+                  text: _('On this tab you can configure PVR-server integration, for now it supports sonarr, radarr and lidarr. If the corresponding server is enabled, removing a torrent from deluge will also blacklist it from the upstream server, so that it\'s not downloaded again. Do this with the Remove and Blacklist option in right-click menu. Don\'t want this: just don\'t enable any servers.')
+				}],
+          });
+		
         this.sonarrContainer = this.mediaSettingsBox.add({
               xtype: 'container',
               layout: 'hbox',
@@ -1376,8 +1388,22 @@ Deluge.plugins.autoremoveplus.Plugin = Ext.extend(Deluge.Plugin, {
                 }
             }
         }]);
-
+		
 		deluge.menus.torrent.on('show', this.updateExempt, this);
+		
+		deluge.menus.torrent.add([{
+            xtype: 'menuitem',
+			icon: 'bl.png',
+            text: 'Remove and Blacklist',
+            id: 'blacklist',
+			handler: this.removeAndBlacklist
+			//listeners: {
+            //  deluge.client.autoremoveplus.blacklist(deluge.torrents.getSelectedIds())
+            // }
+            //}
+        }]);
+
+		//deluge.menus.torrent.on('show', this.removeAndBlacklist, this);
 
         console.log('%s enabled', Deluge.plugins.autoremoveplus.PLUGIN_NAME);
     },
@@ -1388,6 +1414,7 @@ Deluge.plugins.autoremoveplus.Plugin = Ext.extend(Deluge.Plugin, {
         this.prefsPage.destroy();
 
         deluge.menus.torrent.un('show', this.updateExempt, this);
+		//deluge.menus.torrent.un('show', this.removeAndBlacklist, this);
 
         console.log('%s disabled', Deluge.plugins.autoremoveplus.PLUGIN_NAME);
     },
@@ -1403,8 +1430,14 @@ Deluge.plugins.autoremoveplus.Plugin = Ext.extend(Deluge.Plugin, {
             },
             scope: this
         });
+    },
+	
+	removeAndBlacklist: function() {
+    	console.log('Remove and blacklist function running...');
+    	//var blacklistItem = deluge.menus.torrent.getComponent('blacklist');
+    	result = deluge.client.autoremoveplus.blacklistCommand(deluge.torrents.getSelectedIds())
+		console.log("Command returned:", result)
     }
-
 });
 
 Deluge.registerPlugin(Deluge.plugins.autoremoveplus.PLUGIN_NAME,Deluge.plugins.autoremoveplus.Plugin);
