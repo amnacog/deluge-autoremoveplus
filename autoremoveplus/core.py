@@ -463,8 +463,8 @@ class Core(CorePluginBase):
           lidarr_list = self.lidarr.get_queue() if use_lidarr else {}
           
           #prevent hit & run
-          seedtime_pause = seedtime_pause if seedtime_pause > 20.0 else 20.0
-          seedtime_limit = seedtime_limit if seedtime_limit > 24.0 else 24.0
+          #seedtime_pause = seedtime_pause if seedtime_pause > 20.0 else 20.0
+          #seedtime_limit = seedtime_limit if seedtime_limit > 24.0 else 24.0
           
           log.debug("Using sonarr: {}, radarr: {}, lidarr: {}".format(use_sonarr,use_radarr,use_lidarr))
           log.info("Size of lists: sonarr:{}, lidarr:{}, radarr:{}".format(len(sonarr_list),len(lidarr_list),len(radarr_list)))
@@ -594,7 +594,7 @@ class Core(CorePluginBase):
                 
                 #chosen_func = self.config['filter2']
                 # prevent hit and runs
-                max_val2 = max_val2 if max_val2 > 0.5 else 0.5
+                #max_val2 = max_val2 if max_val2 > 0.5 else 0.5
                 #log.info("Chosen filter2 : {}, cut-off: {}".format(chosen_func,max_val2))
                 
                 filter_2 = filter_funcs.get(self.config['filter2'], _get_ratio)((i, t)) >= max_val2

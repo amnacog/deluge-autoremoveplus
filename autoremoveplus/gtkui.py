@@ -143,8 +143,9 @@ class GtkUI(GtkPluginBase):
             "toggled",
             self.on_click_chk_rule_2
         )
-
-        def on_menu_show(menu, (menu_item, toggled)):
+        
+        def on_menu_show(menu, menu_item, toggled):
+        #def on_menu_show(menu, (menu_item, toggled)):
             def set_ignored(ignored):
                 # set_active will raise the 'toggled'/'activated' signals
                 # so block it to not reset the value
