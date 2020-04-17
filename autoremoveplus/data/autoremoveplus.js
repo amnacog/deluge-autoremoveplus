@@ -691,16 +691,16 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
           boxLabel: _('Remove torrent data')
         });
 
-        this.chkRemoveSeed = this.genSettingsBox.add({
+        this.chkPause = this.genSettingsBox.add({
           xtype: 'checkbox',
           margins: '5 0 0 5',
-          boxLabel: _('Just pause seeding torrents, never remove')
+          boxLabel: _('Pause torrents')
         });
         
         this.chkRemoveSeedData = this.genSettingsBox.add({
           xtype: 'checkbox',
           margins: '5 0 0 5',
-          boxLabel: _('Remove also data for completed torrents')
+          boxLabel: _('Remove torrent data also for completed torrents')
         });
 
         this.combo = new Ext.form.ComboBox({
@@ -859,7 +859,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         this.testButtonContainer.getComponent(0).setHandler(this.onClickTest, this);
         
         this.chkRemove.on('check', this.onClickRemove, this);
-        this.chkRemoveSeed.on('check', this.onClickRemoveSeed, this);
+        //this.chkPause.on('check', this.onClickRemoveSeed, this);
         this.chkEnabled.on('check', this.onClickEnabled, this);
         this.rule1Container.getComponent(0).on('check', this.onClickChkRule1, this);
         this.rule2Container.getComponent(0).on('check', this.onClickChkRule2, this);
@@ -879,7 +879,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
     //TODO destroy
     onDestroy: function() {
         this.un('check', this.onClickRemove, this);
-        this.un('check', this.onClickRemoveSeed, this);
+        //this.un('check', this.onClickRemoveSeed, this);
         this.un('check', this.onClickEnabled, this);
         this.rule1Container.getComponent(0).un('check', this.onClickChkRule1, this);
         this.rule2Container.getComponent(0).un('check', this.onClickChkRule2, this);
@@ -992,11 +992,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
           this.chkRemoveData.enable();
         else
           this.chkRemoveData.disable();
-        this.chkRemoveSeed.enable();
-        if (this.chkRemoveSeed.getValue())
-          this.chkRemoveSeedData.disable();
-        else
-          this.chkRemoveSeedData.enable();
+        this.chkPause.enable();
         this.chkRemoveSeedData.enable();
         this.sonarrContainer.enable();
         this.lidarrContainer.enable();
@@ -1020,7 +1016,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         this.chkExemptCount.disable();
         this.chkRemove.disable();
         this.chkRemoveData.disable();
-        this.chkRemoveSeed.disable();
+        this.chkPause.disable();
         this.chkRemoveSeedData.disable();
         this.sonarrContainer.disable();
         this.lidarrContainer.disable();
@@ -1128,7 +1124,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
             this.removeByContainer2.getComponent(4).setValue(prefs['min2']);
             this.removeByContainer2.getComponent(0).setValue(prefs['sel_func']);
             this.chkRemove.setValue(prefs['remove']);
-            this.chkRemoveSeed.setValue(prefs['pause_seed']);
+            this.chkPause.setValue(prefs['pause_torrents']);
             var enabled = prefs['enabled'];
             this.chkEnabled.setValue(enabled);
             if(enabled)
@@ -1288,7 +1284,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
 
         var prefs = {
           remove_data: this.chkRemoveData.getValue(),
-          pause_seed: this.chkRemoveSeed.getValue(),
+          pause_torrents: this.chkPause.getValue(),
           seed_remove_data: this.chkRemoveSeedData.getValue(),
           count_exempt: this.chkExemptCount.getValue(),
           trackers: trackerList,
@@ -1336,7 +1332,7 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         apply |= prefs['interval'].toFixed(Deluge.plugins.autoremoveplus.CHECK_PRECISION)
           != this.preferences['interval'].toFixed(Deluge.plugins.autoremoveplus.CHECK_PRECISION);
         apply |= prefs['remove'] != this.preferences['remove'];
-        apply |= prefs['pause_seed'] != this.preferences['pause_seed'];
+        apply |= prefs['pause_torrents'] != this.preferences['pause_torrents'];
         apply |= prefs['enabled'] != this.preferences['enabled'];
         apply |= prefs['rule_1_enabled'] != this.preferences['rule_1_enabled'];
         apply |= prefs['rule_2_enabled'] != this.preferences['rule_2_enabled'];

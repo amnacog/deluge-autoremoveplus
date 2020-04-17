@@ -81,7 +81,8 @@ DEFAULT_PREFS = {
     "seed_remove_data": False,
     "pause_seed": False,  
     "seedtime_limit": 120,
-    "seedtime_pause": 48  
+    "seedtime_pause": 48,
+    "pause_torrents": False    
 }
 
 def _get_ratio(i_t):
@@ -452,7 +453,7 @@ class Core(CorePluginBase):
           rule_2_chk = self.config['rule_2_enabled']
           seedtime_limit = float(self.config['seedtime_limit'])
           seedtime_pause = float(self.config['seedtime_pause'])
-          always_pause_seed = self.config['pause_seed']
+          pause_torrents = self.config['pause_torrents']
           labels_enabled = False
           use_sonarr = self.config['enable_sonarr'] if self.config['enable_sonarr'] else False
           use_radarr = self.config['enable_radarr'] if self.config['enable_radarr'] else False
@@ -661,6 +662,12 @@ class Core(CorePluginBase):
                         label_str = 'none'
                     log.debug("Processing unfinished torrent {}, label = {}".format(name,label_str))
                     if remove_cond:
+                        #pause torrents if selected
+                        if pause_torrents:
+                            if not paused:
+                                log.info("AutoRemovePlus: Pausing torrent {} due to availability = {}, age = {}, time_last_transfer = {}".format(name, availability, age,time_last_transfer))
+                                self.pause_torrent(t)
+                                
                         #user has selected to remove torrents
                         if remove:
                             # blacklist
@@ -673,37 +680,34 @@ class Core(CorePluginBase):
                                 
                             # remove using local method
                             result = self.remove_torrent(i, remove_data)
-                            log.info("AutoRemovePlus: removing unfinished torrent {} with data using internal method: {}".format(name,result))                            
-                        else:
-                            #pause instead
-                            if not paused:
-                                log.info("AutoRemovePlus: Pausing torrent {} due to availability = {}, age = {}, time_last_transfer = {}".format(name, availability, age,time_last_transfer))
-                                self.pause_torrent(t)                        
+                            log.info("AutoRemovePlus: removing unfinished torrent {} with data = {} using internal method: {}".format(name,remove_data, result))                            
+                        
+                            
 
                 else: # is finished
                     
                   log.debug("Fin.: {}, seed time:{}/{}, ratio: {}, spec. rules = {}, sr cond. = {}/{},isfinished = {}, hash = {}".format(name,seedtime,seedtime_limit,ratio,specific_rules,remove_cond,seed_remove_cond,isFinished,hash))                  
                   if (not specific_rules) or (seed_remove_cond):                                       
                     #remove condition
-                    if seedtime > seedtime_limit:
-                        if not always_pause_seed:
-                            #seed_remove_data decides if user wants data removed or not
-                            self.remove_torrent(i, seed_remove_data)
-                            changed = True
-                            log.info("AutoRemovePlus: removing torrent from seed: {} due to seed time = {}/{} h".format(name,seedtime,seedtime_limit))
+                    if seedtime > seedtime_limit:                        
+                        #seed_remove_data decides if user wants data removed or not
+                        self.remove_torrent(i, seed_remove_data)
+                        changed = True
+                        log.info("AutoRemovePlus: removing torrent from seed: {} due to seed time = {}/{} h".format(name,seedtime,seedtime_limit))
                         
                     #pause condition
-                    elif seedtime > seedtime_pause: 
-                      try:
-                        #paused = t.get_status(['paused'])['paused']
-                        if not paused:
-                          self.pause_torrent(t)
-                          #changed = True
-                          log.info("AutoRemovePlus: pausing finished torrent {} with seedtime = {}/{} h, ratio = {}, rules = {}, sr-cond = {}/{}".format(name,seedtime,seedtime_pause,ratio,specific_rules,remove_cond,seed_remove_cond))
-                        else:
-                          log.debug("AutoRemovePlus: torrent is already paused: {}".format(name))
-                      except Exception as e:
-                          log.warning("AutoRemovePlus: error with pausing torrent: {}".format(name))
+                    elif seedtime > seedtime_pause:
+                        if pause_torrents:
+                            try:
+                                #paused = t.get_status(['paused'])['paused']
+                                if not paused:
+                                  self.pause_torrent(t)
+                                  #changed = True
+                                  log.info("AutoRemovePlus: pausing finished torrent {} with seedtime = {}/{} h, ratio = {}, rules = {}, sr-cond = {}/{}".format(name,seedtime,seedtime_pause,ratio,specific_rules,remove_cond,seed_remove_cond))
+                                else:
+                                  log.debug("AutoRemovePlus: torrent is already paused: {}".format(name))
+                            except Exception as e:
+                                  log.warning("AutoRemovePlus: error with pausing torrent: {}".format(name))
 
         # If a torrent exemption state has been removed save changes
         if changed:
