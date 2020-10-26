@@ -169,28 +169,33 @@ class Core(CorePluginBase):
         self.looping_call = LoopingCall(self.periodicScan)
         deferLater(reactor, 5, self.start_looping)
         try:
-          apikey_sonarr = self.config['api_sonarr']
-          apikey_radarr = self.config['api_radarr']
-          apikey_lidarr = self.config['api_lidarr']
-          use_sonarr    = self.config['enable_sonarr']
-          use_radarr    = self.config['enable_radarr']
-          use_lidarr    = self.config['enable_lidarr']
-          server        = self.config['server_url']
+          apikey_sonarr   = self.config['api_sonarr']
+          apikey_radarr   = self.config['api_radarr']
+          apikey_lidarr   = self.config['api_lidarr']
+          use_sonarr      = self.config['enable_sonarr']
+          use_radarr      = self.config['enable_radarr']
+          use_lidarr      = self.config['enable_lidarr']
+          endpoint_sonarr = self.config['endpoint_sonarr']
+          endpoint_radarr = self.config['endpoint_radarr']
+          endpoint_lidarr = self.config['endpoint_lidarr']
+
         except KeyError as e:
           log.warning("Unable to read server config, so disabling sonarr/radarr/lidarr for now. Missing key: {}".format(e))
-          use_sonarr    = False
-          use_radarr    = False
-          use_lidarr    = False
-          apikey_sonarr = None
-          apikey_radarr = None
-          apikey_lidarr = None
-          server        = None
+          use_sonarr      = False
+          use_radarr      = False
+          use_lidarr      = False
+          apikey_sonarr   = None
+          apikey_radarr   = None
+          apikey_lidarr   = None
+          endpoint_sonarr = None
+          endpoint_radarr = None
+          endpoint_lidarr = None
           
-        log.debug("Server config: Sonarr: enabled={},key={}, Radarr: enabled={}, key={}, Lidarr: enabled={}, key={}, Server: url={}".format(use_sonarr,apikey_sonarr,use_radarr,apikey_radarr,use_lidarr,apikey_lidarr,server))
+        log.debug("Server config: Sonarr: enabled={},key={}, Radarr: enabled={}, key={}, Lidarr: enabled={}, key={}, Servers: {} {} {}".format(use_sonarr,apikey_sonarr,use_radarr,apikey_radarr,use_lidarr,apikey_lidarr,endpoint_sonarr,endpoint_radarr,endpoint_lidarr))
         
-        self.sonarr = Mediaserver(server,apikey_sonarr,'sonarr')
-        self.lidarr = Mediaserver(server,apikey_lidarr,'lidarr')
-        self.radarr = Mediaserver(server,apikey_radarr,'radarr')  
+        self.sonarr = Mediaserver(endpoint_sonarr,apikey_sonarr,'sonarr')
+        self.lidarr = Mediaserver(endpoint_radarr,apikey_lidarr,'lidarr')
+        self.radarr = Mediaserver(endpoint_lidarr,apikey_radarr,'radarr')  
         self.accepted_labels = ['tv-sonarr','radarr','lidarr']
         self.torrentmanager = component.get("TorrentManager")
                        

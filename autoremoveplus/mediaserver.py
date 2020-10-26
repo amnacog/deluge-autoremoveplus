@@ -107,11 +107,10 @@ class HTTP_MethodError(Exception):
         return repr(self.value)
 
 class Mediaserver(object):
-    def __init__(self, server, apikey, type='sonarr'):
-        self.server     = server
+    def __init__(self, endpoint, apikey, type='sonarr'):
+        self.endpoint     = endpoint
         self.api_key    = apikey
         self.type       = type
-        self.endpoint       = '/sonarr/api/v3' if type == 'sonarr' else '/lidarr/api/v1' if type == 'lidarr' else '/radarr/api' if type == 'radarr' else None
               
         if self.endpoint is None:
             raise Exception('Unknown server: {}'.format(type))
@@ -136,7 +135,7 @@ class Mediaserver(object):
         
         while True:
             try:
-                url = self.server + self.endpoint + '/queue?' +str('page=') + str(pagenum)
+                url = self.endpoint + '/queue?' +str('page=') + str(pagenum)
                 log.debug("Sending GET request to {}".format(url))
                 r = requests.get(url, headers=h,timeout=30)
             except Exception as e:
@@ -181,7 +180,7 @@ class Mediaserver(object):
             'Accept-Encoding': 'gzip'
         }
 
-        url = self.server + self.endpoint + '/blacklist?sortkey=date'
+        url = self.endpoint + '/blacklist?sortkey=date'
 
         log.debug("Sending GET request to {}: type = {}".format(url,type(url)))
         
@@ -213,7 +212,7 @@ class Mediaserver(object):
             'Accept-Encoding': 'gzip'
         }
         query = str(item_id)
-        url = self.server + self.endpoint + '/blacklist/'+ query
+        url = self.endpoint + '/blacklist/'+ query
         log.debug("Sending DELETE request to {}: type = {}".format(url,type(url)))
         
         try:
@@ -244,7 +243,7 @@ class Mediaserver(object):
         log.debug("Parsing item id: {}, type = {}".format(item_id,type(item_id)))
         try:
             query = str(item_id)+'?blacklist='+str(blacklist)+'&removeFromClient='+str(removeFromClient)
-            url = self.server + self.endpoint + '/queue/' + query
+            url = self.endpoint + '/queue/' + query
             log.debug("Got this: url = {}, type = {}, query = {}, type =? {}".format(url, type(url),query,type(query)))
         except Exception as e:
             log.error("Unable to create delete query for item {}: {}".format(item_id,e))
@@ -300,15 +299,17 @@ if __name__ == '__main__':
     config.read(file)
 
     try:
-        apikey_sonarr = config['general']['apikey_sonarr']
-        apikey_lidarr = config['general']['apikey_lidarr']
-        apikey_radarr = config['general']['apikey_radarr']
-        server        = config['general']['server']
+        apikey_sonarr   = config['general']['apikey_sonarr']
+        apikey_lidarr   = config['general']['apikey_lidarr']
+        apikey_radarr   = config['general']['apikey_radarr']
+        endpoint_sonarr = config['general']['endpoint_sonarr']
+        endpoint_radarr = config['general']['endpoint_radarr']
+        endpoint_lidarr = config['general']['endpoint_lidarr']
     except Exception as e:
         log.error("Cannot read server config: make sure it exists in './data/server.ini:' {}".format(e))
         exit ();
         
-    server = Mediaserver(server,apikey_sonarr,'sonarr') if args.server == 'sonarr' else Mediaserver(server,apikey_radarr,'radarr') if args.server == 'radarr' else Mediaserver(server,apikey_lidarr,'lidarr')
+    server = Mediaserver(endpoint_sonarr,apikey_sonarr,'sonarr') if args.server == 'sonarr' else Mediaserver(endpoint_radarr,apikey_radarr,'radarr') if args.server == 'radarr' else Mediaserver(endpoint_lidarr,apikey_lidarr,'lidarr')
     main(server,args.mode,args.item)
 
 

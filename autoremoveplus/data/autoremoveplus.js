@@ -206,12 +206,22 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
               {
                   xtype: 'label',
                   margins: '5 5 0 0',
-                  text: _('   api-key: ')
+                  text: _('Endpoint URL: ')
               },
               {
                   xtype: 'textfield',
-                  name: 'txtSonarr',
-                  fieldLabel: _('sonarrApi')
+                  name: 'txtEndpointSonarr',
+                  fieldLabel: _('sonarrEndpoint')
+              },
+              {
+                xtype: 'label',
+                margins: '5 5 0 0',
+                text: _('api-key: ')
+              },
+              {
+                  xtype: 'textfield',
+                  name: 'txtApiSonarr',
+                  fieldLabel: _('sonarrApiKey')
               }]
           });
 
@@ -233,12 +243,22 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
               {
                   xtype: 'label',
                   margins: '5 5 0 0',
-                  text: _('   api-key: ')
+                  text: _('Endpoint URL: ')
               },
               {
                   xtype: 'textfield',
-                  name: 'txtRadarr',
-                  fieldLabel: _('radarrApi')
+                  name: 'txtEndpointRadarr',
+                  fieldLabel: _('radarrEndpoint')
+              },
+              {
+                xtype: 'label',
+                margins: '5 5 0 0',
+                text: _('api-key: ')
+              },
+              {
+                  xtype: 'textfield',
+                  name: 'txtApiRadarr',
+                  fieldLabel: _('radarrApiKey')
               }]
           });		
             
@@ -260,28 +280,22 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
               {
                   xtype: 'label',
                   margins: '5 5 0 0',
-                  text: _('   api-key: ')
+                  text: _('Endpoint URL: ')
               },
               {
                   xtype: 'textfield',
-                  name: 'txtLidarr',
-                  fieldLabel: _('lidarrApi')
-              }]
-          });
-        
-        this.serverContainer = this.mediaSettingsBox.add({
-              xtype: 'container',
-              layout: 'hbox',
-              margins: '5 5 8 5',
-              items: [{
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('Server url: ')
+                  name: 'txtEndpointLidarr',
+                  fieldLabel: _('lidarrEndpoint')
+              },
+              {
+                xtype: 'label',
+                margins: '5 5 0 0',
+                text: _('api-key: ')
               },
               {
                   xtype: 'textfield',
-                  name: 'txtServer',
-                  fieldLabel: _('server_url')
+                  name: 'txtApiLidarr',
+                  fieldLabel: _('lidarrApiKey')
               }]
           });
         
@@ -997,7 +1011,6 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         this.sonarrContainer.enable();
         this.lidarrContainer.enable();
         this.radarrContainer.enable();
-        this.serverContainer.enable();
         this.testButtonContainer.enable();
     },
 
@@ -1021,7 +1034,6 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         this.sonarrContainer.disable();
         this.lidarrContainer.disable();
         this.radarrContainer.disable();
-        this.serverContainer.disable();
         this.testButtonContainer.disable();
 
     },
@@ -1050,10 +1062,14 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         if (checked){
           this.sonarrContainer.getComponent(2).enable();
           this.sonarrContainer.getComponent(3).enable();
+          this.sonarrContainer.getComponent(4).enable();
+          this.sonarrContainer.getComponent(5).enable();
         }
         else{
           this.sonarrContainer.getComponent(2).disable();
           this.sonarrContainer.getComponent(3).disable();
+          this.sonarrContainer.getComponent(4).disable();
+          this.sonarrContainer.getComponent(5).disable();
         }
         //console.log(checked);
         //console.log('onClickRemove');
@@ -1063,11 +1079,15 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         if (checked){
           this.radarrContainer.getComponent(2).enable();
           this.radarrContainer.getComponent(3).enable();
+          this.radarrContainer.getComponent(4).enable();
+          this.radarrContainer.getComponent(5).enable();
         }
         else
         {
           this.radarrContainer.getComponent(2).disable();
           this.radarrContainer.getComponent(3).disable();
+          this.radarrContainer.getComponent(4).disable();
+          this.radarrContainer.getComponent(5).disable();
         }
         //console.log(checked);
         //console.log('onClickRemove');
@@ -1077,10 +1097,14 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         if (checked){
           this.lidarrContainer.getComponent(2).enable();
           this.lidarrContainer.getComponent(3).enable();
+          this.lidarrContainer.getComponent(4).enable();
+          this.lidarrContainer.getComponent(5).enable();
         }
         else{
           this.lidarrContainer.getComponent(2).disable();
           this.lidarrContainer.getComponent(3).disable();
+          this.lidarrContainer.getComponent(4).disable();
+          this.lidarrContainer.getComponent(5).disable();
         }
         //console.log(checked);
         //console.log('onClickRemove');
@@ -1145,12 +1169,14 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
               this.removeByContainer2.disable();
            //media servers
            this.sonarrContainer.getComponent(1).setValue(prefs['enable_sonarr']);
-           this.sonarrContainer.getComponent(3).setValue(prefs['api_sonarr']);
+           this.sonarrContainer.getComponent(3).setValue(prefs['endpoint_sonarr']);
+           this.sonarrContainer.getComponent(5).setValue(prefs['api_sonarr']);
            this.radarrContainer.getComponent(1).setValue(prefs['enable_radarr']);
-           this.radarrContainer.getComponent(3).setValue(prefs['api_radarr']);
+           this.sonarrContainer.getComponent(3).setValue(prefs['endpoint_radarr']);
+           this.radarrContainer.getComponent(5).setValue(prefs['api_radarr']);
            this.lidarrContainer.getComponent(1).setValue(prefs['enable_lidarr']);
-           this.lidarrContainer.getComponent(3).setValue(prefs['api_lidarr']);
-           this.serverContainer.getComponent(1).setValue(prefs['server_url']);
+           this.sonarrContainer.getComponent(3).setValue(prefs['endpoint_lidarr']);
+           this.lidarrContainer.getComponent(5).setValue(prefs['api_lidarr']);
           },
           scope: this
         });
@@ -1307,12 +1333,14 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
           rule_2_enabled: this.rule2Container.getComponent(0).getValue(),
           //media servers
           enable_sonarr:  this.sonarrContainer.getComponent(1).getValue(),
-          api_sonarr: this.sonarrContainer.getComponent(3).getValue(),
+          endpoint_sonarr: this.sonarrContainer.getComponent(3).getValue(),
+          api_sonarr: this.sonarrContainer.getComponent(5).getValue(),
           enable_radarr: this.radarrContainer.getComponent(1).getValue(),
-          api_radarr: this.radarrContainer.getComponent(3).getValue(),
+          endpoint_radarr: this.radarrContainer.getComponent(3).getValue(),
+          api_radarr: this.radarrContainer.getComponent(5).getValue(),
           enable_lidarr: this.lidarrContainer.getComponent(1).getValue(),
-          api_lidarr: this.lidarrContainer.getComponent(3).getValue(),
-          server_url: this.serverContainer.getComponent(1).getValue()
+          endpoint_lidarr: this.sonarrContainer.getComponent(3).getValue(),
+          api_lidarr: this.lidarrContainer.getComponent(5).getValue()
         };
         
         apply |= prefs['remove_data'] != this.preferences['remove_data'];
@@ -1340,10 +1368,12 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         apply |= prefs['enable_sonarr'] != this.preferences['enable_sonarr'];
         apply |= prefs['enable_radarr'] != this.preferences['enable_radarr'];
         apply |= prefs['enable_lidarr'] != this.preferences['enable_lidarr'];
+        apply |= prefs['endpoint_sonarr'] != this.preferences['endpoint_sonarr'];
+        apply |= prefs['endpoint_radarr'] != this.preferences['endpoint_radarr'];
+        apply |= prefs['endpoint_lidarr'] != this.preferences['endpoint_lidarr'];
         apply |= prefs['api_sonarr'] != this.preferences['api_sonarr'];
         apply |= prefs['api_radarr'] != this.preferences['api_radarr'];
         apply |= prefs['api_lidarr'] != this.preferences['api_lidarr'];
-        apply |= prefs['server_url'] != this.preferences['server_url'];
         apply |= !Deluge.plugins.autoremoveplus.util.arrayEquals(prefs['trackers'],
             this.preferences['trackers']);
         apply |= !Deluge.plugins.autoremoveplus.util.arrayEquals(prefs['labels'],
