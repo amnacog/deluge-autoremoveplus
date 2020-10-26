@@ -86,12 +86,12 @@ DEFAULT_PREFS = {
 }
 
 def _get_ratio(i_t):
-    (i, t) = i_t
+    (_, t) = i_t
     log.debug("Get ratio: i = {}, t = {}".format(i,t))
     return t.get_ratio()
 
 def _time_last_transfer(i_t):
-    (i, t) = i_t
+    (_, t) = i_t
     try:
         # time since last transfer (upload/download) in hours
         time_since_last_transfer = round(t.get_status(['time_since_transfer'])['time_since_transfer'] / 3600.0,2)
@@ -102,7 +102,7 @@ def _time_last_transfer(i_t):
     return time_since_last_transfer
 
 def _age_in_days(i_t):
-    (i, t) = i_t
+    (_, t) = i_t
     now = time.time()
     added = t.get_status(['time_added'])['time_added']
     log.debug("Now = {}, added = {}".format(now,added))
@@ -111,7 +111,7 @@ def _age_in_days(i_t):
     return age_in_days
 
 def _time_seen_complete(i_t):
-    (i, t) = i_t
+    (_, t) = i_t
     now = time.time()
     try:
       seen_complete = t.get_status(['last_seen_complete'])['last_seen_complete']
@@ -280,7 +280,6 @@ class Core(CorePluginBase):
                 
                 #blacklist from PVR
                 response = mediaObject.delete_queueitem(id)
-                changed = True
                 log.info("Blacklist request for torrent {} returned {}".format(name,response))
                 
                 isFinished = t.get_status(['is_finished'])['is_finished']
