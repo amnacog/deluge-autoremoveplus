@@ -176,147 +176,86 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
             }
         });
 		
-		this.mediaPanel = this.mediaSettingsBox.add({
-              xtype: 'container',
-              layout: 'hbox',
-              margins: '5 5 8 5',
-              items: [
-				{
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('On this tab you can configure PVR-server integration, for now it supports sonarr, radarr and lidarr. If the corresponding server is enabled, removing a torrent from deluge will also blacklist it from the upstream server, so that it\'s not downloaded again. Do this with the Remove and Blacklist option in right-click menu. Don\'t want this: just don\'t enable any servers.')
-				}],
-          });
-		
-        this.sonarrContainer = this.mediaSettingsBox.add({
-              xtype: 'container',
-              layout: 'hbox',
-              margins: '5 5 8 5',
-              items: [{
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('Sonarr: ')
-              },
-              {
-                  xtype: 'checkbox',
-                  name: 'chkSonarr',
-                  margins: '5 0 0 5',
-                  boxLabel: _('Enable')
-              },
-              {
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('Endpoint URL: ')
-              },
-              {
-                  xtype: 'textfield',
-                  name: 'txtEndpointSonarr',
-                  fieldLabel: _('sonarrEndpoint')
-              },
-              {
-                xtype: 'label',
-                margins: '5 5 0 0',
-                text: _('api-key: ')
-              },
-              {
-                  xtype: 'textfield',
-                  name: 'txtApiSonarr',
-                  fieldLabel: _('sonarrApiKey')
-              }]
-          });
+      this.mediaPanel = this.mediaSettingsBox.add({
+        xtype: 'container',
+        layout: 'hbox',
+        margins: '5 5 8 5',
+        items: [{
+          xtype: 'label',
+          margins: '5 5 0 0',
+          text: _('On this tab you can configure PVR-server integration, for now it supports sonarr, radarr and lidarr. If the corresponding server is enabled, removing a torrent from deluge will also blacklist it from the upstream server, so that it\'s not downloaded again. Do this with the Remove and Blacklist option in right-click menu. Don\'t want this: just don\'t enable any servers.')
+        }],
+      });
+      
+      this.sonarrContainer = this.mediaSettingsBox.add({
+          xtype: 'fieldset',
+          title: _('Enable Sonarr'),
+          defaultType: 'textfield',
+          autoHeight: true,
+          checkboxToggle: true,
+          collapsed: true,
+          items: [{
+              name: 'sonarrEndpoint',
+              fieldLabel: _('Endpoint URL')
+          },
+          {
+            name: 'sonarrApiKey',
+            fieldLabel: _('API Key')
+        }]
+      });
 
-        this.radarrContainer = this.mediaSettingsBox.add({
-              xtype: 'container',
-              layout: 'hbox',
-              margins: '5 5 8 5',
-              items: [{
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('Radarr: ')
-              },
-              {
-                  xtype: 'checkbox',
-                  name: 'radarrEnabled',
-                  margins: '5 0 0 5',
-                  boxLabel: _('Enable')
-              },
-              {
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('Endpoint URL: ')
-              },
-              {
-                  xtype: 'textfield',
-                  name: 'txtEndpointRadarr',
-                  fieldLabel: _('radarrEndpoint')
-              },
-              {
-                xtype: 'label',
-                margins: '5 5 0 0',
-                text: _('api-key: ')
-              },
-              {
-                  xtype: 'textfield',
-                  name: 'txtApiRadarr',
-                  fieldLabel: _('radarrApiKey')
-              }]
-          });		
+      this.radarrContainer = this.mediaSettingsBox.add({
+        xtype: 'fieldset',
+        title: _('Enable Radarr'),
+        defaultType: 'textfield',
+        autoHeight: true,
+        checkboxToggle: true,
+        collapsed: true,
+        items: [{
+            name: 'radarrEndpoint',
+            fieldLabel: _('Endpoint URL')
+        },
+        {
+            name: 'radarrApiKey',
+            fieldLabel: _('API Key')
+        }]
+      });
             
-        this.lidarrContainer = this.mediaSettingsBox.add({
-              xtype: 'container',
-              layout: 'hbox',
-              margins: '5 5 8 5',
-              items: [{
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('Lidarr: ')
-              },
-              {
-                  xtype: 'checkbox',
-                  name: 'lidarrEnabled',
-                  margins: '5 0 0 5',
-                  boxLabel: _('Enable')
-              },
-              {
-                  xtype: 'label',
-                  margins: '5 5 0 0',
-                  text: _('Endpoint URL: ')
-              },
-              {
-                  xtype: 'textfield',
-                  name: 'txtEndpointLidarr',
-                  fieldLabel: _('lidarrEndpoint')
-              },
-              {
-                xtype: 'label',
-                margins: '5 5 0 0',
-                text: _('api-key: ')
-              },
-              {
-                  xtype: 'textfield',
-                  name: 'txtApiLidarr',
-                  fieldLabel: _('lidarrApiKey')
-              }]
-          });
-        
-        this.testButtonContainer = this.mediaSettingsBox.add({
-                xtype: 'container',
-                layout: 'hbox',
-                margins: '4 0 0 5',
-                items: [
-                {
-                    xtype: 'button',
-                    text: '  Test  ',
-                    margins: '0 5 0 0'
-                },
-                {
-                    xtype: 'displayfield',
-                    fieldLabel: _('testDisplay'),
-                    name: 'testDisplay',
-                    value: ''
-                }
-                ]
-            });
+      this.lidarrContainer = this.mediaSettingsBox.add({
+        xtype: 'fieldset',
+        title: _('Enable Lidarr'),
+        defaultType: 'textfield',
+        autoHeight: true,
+        checkboxToggle: true,
+        collapsed: true,
+        items: [{
+            name: 'lidarrEndpoint',
+            fieldLabel: _('Endpoint URL')
+        },
+        {
+          name: 'lidarrApiKey',
+          fieldLabel: _('API Key')
+        }]
+      });
+          
+      this.testButtonContainer = this.mediaSettingsBox.add({
+          xtype: 'container',
+          layout: 'hbox',
+          margins: '4 0 0 5',
+          items: [
+          {
+              xtype: 'button',
+              text: '  Test  ',
+              margins: '0 5 0 0'
+          },
+          {
+              xtype: 'displayfield',
+              fieldLabel: _('testDisplay'),
+              name: 'testDisplay',
+              value: ''
+          }
+          ]
+      });
             
         this.chkEnabled = this.genSettingsBox.add({
           xtype: 'checkbox',
@@ -877,10 +816,6 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
         this.chkEnabled.on('check', this.onClickEnabled, this);
         this.rule1Container.getComponent(0).on('check', this.onClickChkRule1, this);
         this.rule2Container.getComponent(0).on('check', this.onClickChkRule2, this);
-        
-        this.sonarrContainer.getComponent(1).on('check', this.onClickSonarr, this);
-        this.radarrContainer.getComponent(1).on('check', this.onClickRadarr, this);
-        this.lidarrContainer.getComponent(1).on('check', this.onClickLidarr, this);
                         
         deluge.preferences.on('show', this.loadPrefs, this);
         deluge.preferences.buttons[1].on('click', this.savePrefs, this);
@@ -1056,60 +991,6 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
           //console.log('onClickRemove');
     },
 
-    onClickSonarr: function(checkbox, checked) {
-        console.log('onClickSonarr:' + checked)
-        
-        if (checked){
-          this.sonarrContainer.getComponent(2).enable();
-          this.sonarrContainer.getComponent(3).enable();
-          this.sonarrContainer.getComponent(4).enable();
-          this.sonarrContainer.getComponent(5).enable();
-        }
-        else{
-          this.sonarrContainer.getComponent(2).disable();
-          this.sonarrContainer.getComponent(3).disable();
-          this.sonarrContainer.getComponent(4).disable();
-          this.sonarrContainer.getComponent(5).disable();
-        }
-        //console.log(checked);
-        //console.log('onClickRemove');
-    },
-    
-    onClickRadarr: function(checkbox, checked) {
-        if (checked){
-          this.radarrContainer.getComponent(2).enable();
-          this.radarrContainer.getComponent(3).enable();
-          this.radarrContainer.getComponent(4).enable();
-          this.radarrContainer.getComponent(5).enable();
-        }
-        else
-        {
-          this.radarrContainer.getComponent(2).disable();
-          this.radarrContainer.getComponent(3).disable();
-          this.radarrContainer.getComponent(4).disable();
-          this.radarrContainer.getComponent(5).disable();
-        }
-        //console.log(checked);
-        //console.log('onClickRemove');
-    },
-    
-    onClickLidarr: function(checkbox, checked) {
-        if (checked){
-          this.lidarrContainer.getComponent(2).enable();
-          this.lidarrContainer.getComponent(3).enable();
-          this.lidarrContainer.getComponent(4).enable();
-          this.lidarrContainer.getComponent(5).enable();
-        }
-        else{
-          this.lidarrContainer.getComponent(2).disable();
-          this.lidarrContainer.getComponent(3).disable();
-          this.lidarrContainer.getComponent(4).disable();
-          this.lidarrContainer.getComponent(5).disable();
-        }
-        //console.log(checked);
-        //console.log('onClickRemove');
-    },
-        
     onClickChkRule1: function(checkbox, checked) {
         if (checked)
           this.removeByContainer.enable();
@@ -1168,15 +1049,18 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
             else
               this.removeByContainer2.disable();
            //media servers
-           this.sonarrContainer.getComponent(1).setValue(prefs['enable_sonarr']);
-           this.sonarrContainer.getComponent(3).setValue(prefs['endpoint_sonarr']);
-           this.sonarrContainer.getComponent(5).setValue(prefs['api_sonarr']);
-           this.radarrContainer.getComponent(1).setValue(prefs['enable_radarr']);
-           this.sonarrContainer.getComponent(3).setValue(prefs['endpoint_radarr']);
-           this.radarrContainer.getComponent(5).setValue(prefs['api_radarr']);
-           this.lidarrContainer.getComponent(1).setValue(prefs['enable_lidarr']);
-           this.sonarrContainer.getComponent(3).setValue(prefs['endpoint_lidarr']);
-           this.lidarrContainer.getComponent(5).setValue(prefs['api_lidarr']);
+           const sonarrEnable = prefs['enable_sonarr'] === true ? 'expand' : 'collapse';
+           this.sonarrContainer[sonarrEnable]();
+           this.sonarrContainer.getComponent(0).setValue(prefs['endpoint_sonarr']);
+           this.sonarrContainer.getComponent(1).setValue(prefs['api_sonarr']);
+           const radarrEnable = prefs['enable_radarr'] === true ? 'expand' : 'collapse';
+           this.radarrContainer[radarrEnable]();
+           this.radarrContainer.getComponent(0).setValue(prefs['endpoint_radarr']);
+           this.radarrContainer.getComponent(1).setValue(prefs['api_radarr']);
+           const lidarrEnable = prefs['enable_lidarr'] === true ? 'expand' : 'collapse';
+           this.lidarrContainer[lidarrEnable]();
+           this.lidarrContainer.getComponent(0).setValue(prefs['endpoint_lidarr']);
+           this.lidarrContainer.getComponent(1).setValue(prefs['api_lidarr']);
           },
           scope: this
         });
@@ -1332,15 +1216,15 @@ Deluge.plugins.autoremoveplus.ui.PreferencePage = Ext.extend(Ext.TabPanel, {
           rule_1_enabled: this.rule1Container.getComponent(0).getValue(),
           rule_2_enabled: this.rule2Container.getComponent(0).getValue(),
           //media servers
-          enable_sonarr:  this.sonarrContainer.getComponent(1).getValue(),
-          endpoint_sonarr: this.sonarrContainer.getComponent(3).getValue(),
-          api_sonarr: this.sonarrContainer.getComponent(5).getValue(),
-          enable_radarr: this.radarrContainer.getComponent(1).getValue(),
-          endpoint_radarr: this.radarrContainer.getComponent(3).getValue(),
-          api_radarr: this.radarrContainer.getComponent(5).getValue(),
-          enable_lidarr: this.lidarrContainer.getComponent(1).getValue(),
-          endpoint_lidarr: this.sonarrContainer.getComponent(3).getValue(),
-          api_lidarr: this.lidarrContainer.getComponent(5).getValue()
+          enable_sonarr:  !this.sonarrContainer.collapsed,
+          endpoint_sonarr: this.sonarrContainer.getComponent(0).getValue(),
+          api_sonarr: this.sonarrContainer.getComponent(1).getValue(),
+          enable_radarr: !this.radarrContainer.collapsed,
+          endpoint_radarr: this.radarrContainer.getComponent(0).getValue(),
+          api_radarr: this.radarrContainer.getComponent(1).getValue(),
+          enable_lidarr: !this.lidarrContainer.collapsed,
+          endpoint_lidarr: this.lidarrContainer.getComponent(0).getValue(),
+          api_lidarr: this.lidarrContainer.getComponent(1).getValue()
         };
         
         apply |= prefs['remove_data'] != this.preferences['remove_data'];
